@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UPC RideConnect — Covoiturage Universitaire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --violet-deep: #4c1d95;
+      --violet-main: #7c3aed;
+      --violet-mid: #8b5cf6;
+      --violet-light: #a78bfa;
+      --violet-pale: #ddd6fe;
+      --violet-ghost: #f5f3ff;
+      --gold: #f59e0b;
+      --gold-light: #fcd34d;
+      --cream: #fdfbf7;
+      --dark: #0f0a1e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--dark);
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    /* ── TYPOGRAPHY ── */
+    .font-display { font-family: 'Playfair Display', serif; }
+    .font-mono    { font-family: 'Space Mono', monospace; }
+
+    /* ── NAVBAR ── */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      transition: all 0.4s ease;
+    }
+    #navbar.scrolled {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 1px 30px rgba(124,58,237,0.12);
+    }
+
+    /* ── HERO ── */
+    .hero-bg {
+      background: linear-gradient(135deg, #1e0a3c 0%, #4c1d95 40%, #7c3aed 75%, #8b5cf6 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 50%, rgba(167,139,250,0.25) 0%, transparent 60%);
+    }
+
+    /* ── FLOATING SHAPES ── */
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      animation: float 8s ease-in-out infinite;
+    }
+    .shape-1 { width:400px; height:400px; background:rgba(167,139,250,0.2); top:-100px; right:-100px; animation-delay:0s; }
+    .shape-2 { width:250px; height:250px; background:rgba(245,158,11,0.15); bottom:50px; left:10%; animation-delay:3s; }
+    .shape-3 { width:180px; height:180px; background:rgba(124,58,237,0.3); top:40%; right:30%; animation-delay:5s; }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%      { transform: translateY(-30px) scale(1.05); }
+    }
+
+    /* ── PHOTO CARDS ── */
+    .photo-card {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(76,29,149,0.4);
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .photo-card:hover { transform: translateY(-8px) scale(1.02); }
+    .photo-card img { width:100%; height:100%; object-fit:cover; display:block; }
+    .photo-card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(76,29,149,0.7) 0%, transparent 50%);
+    }
+
+    /* ── PILL BADGE ── */
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--violet-pale);
+      letter-spacing: 0.05em;
+    }
+    .pill-dot { width:8px; height:8px; border-radius:50%; background:var(--gold); animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.5; transform:scale(1.3); }
+    }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%);
+      color: #fff;
+      font-weight: 600;
+      border-radius: 14px;
+      padding: 14px 32px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 8px 30px rgba(245,158,11,0.4);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(245,158,11,0.5); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      font-weight: 500;
+      border-radius: 14px;
+      padding: 14px 32px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.25);
+      transition: all 0.3s ease;
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+
+    .btn-violet {
+      background: linear-gradient(135deg, var(--violet-main) 0%, var(--violet-deep) 100%);
+      color: #fff;
+      font-weight: 600;
+      border-radius: 14px;
+      padding: 14px 32px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 8px 30px rgba(124,58,237,0.35);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none;
+    }
+    .btn-violet:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(124,58,237,0.5); }
+
+    /* ── CARDS ── */
+    .glass-card {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(167,139,250,0.2);
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(124,58,237,0.08);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .glass-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(124,58,237,0.18);
+      border-color: rgba(167,139,250,0.4);
+    }
+
+    .dark-card {
+      background: linear-gradient(135deg, #1e0a3c 0%, #2d1054 100%);
+      border: 1px solid rgba(167,139,250,0.15);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    /* ── STAT COUNTER ── */
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--violet-light), var(--gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── FEATURE ICON ── */
+    .feature-icon {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    /* ── TRIP CARD ── */
+    .trip-card {
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid var(--violet-pale);
+      padding: 20px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .trip-card:hover {
+      border-color: var(--violet-mid);
+      box-shadow: 0 10px 40px rgba(124,58,237,0.12);
+      transform: translateY(-3px);
+    }
+
+    /* ── AVATAR RING ── */
+    .avatar-ring {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--violet-mid);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    /* ── RATING STARS ── */
+    .star { color: var(--gold); font-size: 0.85rem; }
+
+    /* ── ROUTE LINE ── */
+    .route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .route-line { width: 2px; height: 28px; background: linear-gradient(to bottom, var(--violet-main), var(--violet-pale)); margin: 3px auto; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(15,10,30,0.7);
+      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: #fff;
+      border-radius: 28px;
+      padding: 40px;
+      width: 100%; max-width: 460px;
+      transform: translateY(30px) scale(0.95);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-overlay.active .modal-box { transform: translateY(0) scale(1); }
+
+    /* ── FORM INPUT ── */
+    .form-input {
+      width: 100%;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      background: #fafafa;
+    }
+    .form-input:focus {
+      border-color: var(--violet-mid);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
+      background: #fff;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--violet-main);
+      background: var(--violet-ghost);
+      border: 1px solid var(--violet-pale);
+      padding: 4px 14px;
+      border-radius: 100px;
+      display: inline-block;
+    }
+
+    /* ── GRADIENT TEXT ── */
+    .grad-text {
+      background: linear-gradient(135deg, var(--violet-main) 0%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .grad-text-gold {
+      background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── PAYMENT SIM ── */
+    .payment-step {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      transition: all 0.3s ease;
+    }
+    .payment-step.active {
+      border-color: var(--violet-mid);
+      background: var(--violet-ghost);
+    }
+    .payment-step.done {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--violet-pale); border-radius: 10px; }
+
+    /* ── ANIMATE IN ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── LOGO UPC ── */
+    .upc-logo-svg { filter: drop-shadow(0 4px 12px rgba(124,58,237,0.3)); }
+
+    /* ── TABS ── */
+    .tab-btn {
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      background: transparent;
+      color: #6b7280;
+    }
+    .tab-btn.active {
+      background: var(--violet-main);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(124,58,237,0.3);
+    }
+
+    /* ── DASHBOARD PANEL ── */
+    #dashboard-panel {
+      position: fixed; inset: 0; z-index: 150;
+      background: var(--violet-ghost);
+      transform: translateX(100%);
+      transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+      overflow-y: auto;
+    }
+    #dashboard-panel.open { transform: translateX(0); }
+
+    /* ── NOTIFICATION BADGE ── */
+    .notif-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 18px; height: 18px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      font-size: 0.6rem;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* ── MOBILE MONEY CARD ── */
+    .mm-card {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border-radius: 20px;
+      padding: 24px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .mm-card::before {
+      content: '';
+      position: absolute;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      top: -60px; right: -60px;
+    }
+
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr !important; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════ -->
+<nav id="navbar" class="py-4 px-6">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <!-- Logo -->
+    <div class="flex items-center gap-3">
+      <div class="upc-logo-svg">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="14" fill="url(#logoGrad)"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="100%" stop-color="#4c1d95"/>
+            </linearGradient>
+          </defs>
+          <!-- Cross symbol -->
+          <rect x="21" y="8" width="6" height="32" rx="3" fill="white" opacity="0.9"/>
+          <rect x="8" y="21" width="32" height="6" rx="3" fill="white" opacity="0.9"/>
+          <!-- Small circles at corners -->
+          <circle cx="12" cy="12" r="3" fill="#f59e0b" opacity="0.8"/>
+          <circle cx="36" cy="12" r="3" fill="#f59e0b" opacity="0.8"/>
+          <circle cx="12" cy="36" r="3" fill="#f59e0b" opacity="0.8"/>
+          <circle cx="36" cy="36" r="3" fill="#f59e0b" opacity="0.8"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-display font-bold text-white text-lg leading-none">UPC</div>
+        <div class="font-mono text-xs text-violet-300 leading-none">RideConnect</div>
+      </div>
+    </div>
+
+    <!-- Nav Links (desktop) -->
+    <div class="hidden md:flex items-center gap-8">
+      <a href="#features" class="text-white/70 hover:text-white text-sm font-medium transition-colors">Fonctionnalités</a>
+      <a href="#how" class="text-white/70 hover:text-white text-sm font-medium transition-colors">Comment ça marche</a>
+      <a href="#trips" class="text-white/70 hover:text-white text-sm font-medium transition-colors">Trajets</a>
+      <a href="#stats" class="text-white/70 hover:text-white text-sm font-medium transition-colors">Impact</a>
+    </div>
+
+    <!-- Auth Buttons -->
+    <div class="flex items-center gap-3">
+      <button onclick="openModal('login')" class="btn-ghost text-sm py-2.5 px-5">Connexion</button>
+      <button onclick="openModal('register')" class="btn-primary text-sm py-2.5 px-5">
+        <span>Rejoindre</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     HERO SECTION
+═══════════════════════════════════════════ -->
+<section class="hero-bg min-h-screen pt-28 pb-20 px-6 relative">
+  <!-- Floating shapes -->
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+  <div class="shape shape-3"></div>
+
+  <div class="max-w-7xl mx-auto relative z-10">
+    <div class="grid hero-grid gap-16 items-center" style="grid-template-columns: 1fr 1fr;">
+      <!-- Left: Text -->
+      <div class="space-y-8">
+        <div class="pill">
+          <div class="pill-dot"></div>
+          Plateforme officielle UPC · Kinshasa
+        </div>
+
+        <h1 class="font-display text-5xl md:text-6xl font-black text-white leading-tight">
+          Voyagez
+          <span style="background:linear-gradient(135deg,#fcd34d,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">ensemble</span>
+          <br/>vers l'avenir
+        </h1>
+
+        <p class="text-violet-200 text-lg leading-relaxed max-w-lg">
+          La première plateforme de covoiturage dédiée aux étudiants de l'<strong class="text-white">Université Protestante au Congo</strong>.
+          Partagez vos trajets, réduisez vos coûts, et construisez une communauté solidaire.
+        </p>
+
+        <!-- Stats mini -->
+       <!--<div class="flex flex-wrap gap-6">
+          <div>
+            <div class="font-display text-3xl font-black text-white">2,400+</div>
+            <div class="text-violet-300 text-sm">Étudiants</div>
+          </div>
+          <div class="w-px bg-white/20"></div>
+          <div>
+            <div class="font-display text-3xl font-black text-white">340+</div>
+            <div class="text-violet-300 text-sm">Trajets/jour</div>
+          </div>
+          <div class="w-px bg-white/20"></div>
+          <div>
+            <div class="font-display text-3xl font-black text-white">72%</div>
+            <div class="text-violet-300 text-sm">Économisé</div>
+          </div>
+        </div>-->
+
+        <div class="flex flex-wrap gap-4">
+          <button onclick="openModal('register')" class="btn-primary">
+            🎓 Créer mon compte étudiant
+          </button>
+          <button onclick="scrollToSection('trips')" class="btn-ghost">
+            Voir les trajets →
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Photo Collage -->
+      <div class="relative hidden md:block">
+        <!-- Main photo -->
+        <div class="photo-card" style="height:380px;">
+          <img src="c:\Users\Administrator\Pictures\Camera Roll\WhatsApp Image 2026-03-23 at 03.49.48.jpeg" alt="Étudiants UPC" />
+          <div class="photo-card-overlay"></div>
+         <div class="absolute bottom-5 left-5 right-5">
+            <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20">
+              <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-400">
+                <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&q=80" alt="" class="w-full h-full object-cover"/>
+              </div>
+            <!-- <div class="flex-1">
+                <div class="text-white text-sm font-semibold">Trajet vers UPC</div>
+                <div class="text-violet-300 text-xs">Lingwala → Campus · 7h30</div>
+              </div>
+              <div class="text-yellow-400 font-mono text-sm font-bold">3 places</div>--> 
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating mini cards -->
+        <div class="absolute -bottom-10 -left-10 w-52 photo-card" style="height:160px;">
+          <img src="c:\Users\Administrator\Pictures\Camera Roll\WhatsApp Image 2026-03-23 at 03.49.48 (2).jpeg" alt="Étudiants" />
+          <div class="photo-card-overlay"></div>
+        </div>
+
+        <div class="absolute -top-6 -right-6 bg-white rounded-2xl p-4 shadow-xl border border-violet-100" style="max-width:180px;">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-sm">⭐</div>
+            <div>
+              <div class="text-xs font-semibold text-gray-800">Note moyenne</div>
+              <div class="text-violet-700 font-mono text-sm font-bold">4 / 5</div>
+            </div>
+          </div>
+          <div class="flex gap-0.5">
+            <div class="star">★</div><div class="star">★</div><div class="star">★</div><div class="star">★</div><div class="star">★</div>
+          </div>
+        </div>
+
+        <!-- Payment badge -->
+        <div class="absolute top-1/2 -left-14 transform -translate-y-1/2 bg-white rounded-2xl p-3 shadow-xl border border-violet-100">
+          <div class="text-xs text-gray-500 mb-1">Paiement</div>
+          <div class="font-bold text-green-600 text-sm">✓ Mobile Money</div>
+          <div class="text-xs text-gray-400">Sécurisé</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wave divider -->
+  <div class="absolute bottom-0 left-0 right-0">
+    <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;">
+      <path d="M0,40 C360,90 1080,-10 1440,40 L1440,80 L0,80 Z" fill="#fdfbf7"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FEATURES SECTION
+═══════════════════════════════════════════ -->
+<section id="features" class="py-24 px-6 bg-white">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16 fade-up">
+      <div class="section-tag mb-4">Fonctionnalités</div>
+      <h2 class="font-display text-4xl md:text-5xl font-black text-gray-900 mb-4">
+        Tout ce dont vous <span class="grad-text">avez besoin</span>
+      </h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">Une plateforme pensée par des étudiants, pour des étudiants de Kinshasa.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Feature 1 -->
+      <div class="glass-card p-8 fade-up">
+        <div class="feature-icon bg-violet-100 mb-5">🚗</div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-3">Publiez vos trajets</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Conducteurs, partagez vos trajets vers l'UPC. Définissez votre point de départ, vos points de passage et le nombre de places disponibles.</p>
+        <div class="mt-5 flex gap-2 flex-wrap">
+          <span class="text-xs bg-violet-50 text-violet-700 px-3 py-1 rounded-full border border-violet-100">Départ</span>
+          <span class="text-xs bg-violet-50 text-violet-700 px-3 py-1 rounded-full border border-violet-100">Horaire</span>
+          <span class="text-xs bg-violet-50 text-violet-700 px-3 py-1 rounded-full border border-violet-100">Places</span>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="glass-card p-8 fade-up" style="transition-delay:0.1s;">
+        <div class="feature-icon bg-amber-100 mb-5">🔍</div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-3">Trouvez un trajet</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Recherchez par quartier ou par heure. Rejoignez des étudiants de votre zone pour un trajet confortable et économique vers le campus.</p>
+        <div class="mt-5 flex gap-2 flex-wrap">
+          <span class="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-100">Par quartier</span>
+          <span class="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-100">Par heure</span>
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="glass-card p-8 fade-up" style="transition-delay:0.2s;">
+        <div class="feature-icon bg-green-100 mb-5">💰</div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-3">Paiement Mobile Money</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Payez via M-Pesa, Airtel Money ou Orange Money. 70% au conducteur, 30% à la plateforme pour la maintenance.</p>
+        <div class="mt-5 flex gap-2 flex-wrap">
+          <span class="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100">M-Pesa</span>
+          <span class="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100">Airtel Money</span>
+        </div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="glass-card p-8 fade-up" style="transition-delay:0.3s;">
+        <div class="feature-icon bg-pink-100 mb-5">📍</div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-3">Points de rencontre</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">La plateforme regroupe automatiquement les étudiants proches et définit des points de rencontre optimaux dans chaque quartier.</p>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="glass-card p-8 fade-up" style="transition-delay:0.4s;">
+        <div class="feature-icon bg-indigo-100 mb-5">⭐</div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-3">Système de notation</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Notez chaque trajet et construisez une communauté de confiance. Les meilleurs conducteurs obtiennent un badge de confiance UPC.</p>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="glass-card p-8 fade-up" style="transition-delay:0.5s;">
+        <div class="feature-icon bg-cyan-100 mb-5">🤝</div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-3">Communauté UPC</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Accès réservé aux étudiants vérifiés par leur email universitaire et numéro de carte étudiant. Sécurité garantie.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     PHOTO SECTION — Étudiants africains
+═══════════════════════════════════════════ -->
+<section class="py-20 px-6" style="background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid md:grid-cols-2 gap-16 items-center">
+      <!-- Photo grid -->
+      <div class="grid grid-cols-2 gap-4 fade-up">
+        <div class="photo-card" style="height:220px;">
+          <img src="c:\Users\Administrator\Pictures\Camera Roll\WhatsApp Image 2026-03-23 at 03.49.48 (1).jpeg" alt="Étudiant africain"/>
+          <div class="photo-card-overlay"></div>
+          <div class="absolute bottom-3 left-3 text-white">
+            <div class="font-semibold text-sm">Jean-Paul K.</div>
+            <div class="text-xs opacity-70">Conducteur ⭐ 4.9</div>
+          </div>
+        </div>
+        <div class="photo-card mt-8" style="height:220px;">
+          <img src="c:\Users\Administrator\Pictures\Camera Roll\WhatsApp Image 2026-03-23 at 03.49.48 (2).jpeg" alt="Étudiante africaine"/>
+          <div class="photo-card-overlay"></div>
+          <div class="absolute bottom-3 left-3 text-white">
+            <div class="font-semibold text-sm">Marie A.</div>
+            <div class="text-xs opacity-70">Passagère · Lingwala</div>
+          </div>
+        </div>
+        <div class="photo-card" style="height:220px;">
+          <img src="c:\Users\Administrator\Pictures\Camera Roll\WhatsApp Image 2026-03-23 at 03.49.47.jpeg" alt="Groupe étudiants"/>
+          <div class="photo-card-overlay"></div>
+          <div class="absolute bottom-3 left-3 text-white">
+            <div class="font-semibold text-sm">Communauté</div>
+            <div class="text-xs opacity-70">2400 membres</div>
+          </div>
+        </div>
+        <div class="photo-card -mt-8" style="height:220px;">
+          <img src="c:\Users\Administrator\Pictures\Camera Roll\WhatsApp Image 2026-03-23 at 03.49.48.jpeg" alt="Campus"/>
+          <div class="photo-card-overlay"></div>
+          <div class="absolute bottom-3 left-3 text-white">
+            <div class="font-semibold text-sm">Campus UPC</div>
+            <div class="text-xs opacity-70">Kinshasa · RDC</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text -->
+      <div class="space-y-6 fade-up" style="transition-delay:0.2s;">
+        <div class="section-tag">Notre Mission</div>
+        <h2 class="font-display text-4xl font-black text-gray-900 leading-tight">
+          Des étudiants unis,<br/>
+          <span class="grad-text">un campus partagé</span>
+        </h2>
+        <p class="text-gray-600 leading-relaxed">
+          À Kinshasa, se rendre au campus est un vrai défi quotidien. Les transports en commun sont imprévisibles, chers et souvent bondés. UPC RideConnect change la donne en créant un réseau de solidarité entre étudiants.
+        </p>
+        <div class="space-y-4">
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0 text-lg">✅</div>
+            <div>
+              <div class="font-semibold text-gray-900">Vérification académique</div>
+              <div class="text-sm text-gray-500">Seuls les étudiants UPC vérifiés peuvent accéder à la plateforme</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 text-lg">💡</div>
+            <div>
+              <div class="font-semibold text-gray-900">Recommandations intelligentes</div>
+              <div class="text-sm text-gray-500">Trajets suggérés selon votre quartier et vos horaires habituels</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0 text-lg">🌍</div>
+            <div>
+              <div class="font-semibold text-gray-900">Impact communautaire</div>
+              <div class="text-sm text-gray-500">Réduction de l'empreinte carbone et des coûts de transport </div>
+            </div>
+          </div>
+        </div>
+        <button onclick="openModal('register')" class="btn-violet">
+          Rejoindre la communauté
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     HOW IT WORKS
+═══════════════════════════════════════════ -->
+<section id="how" class="py-24 px-6 bg-white">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-16 fade-up">
+      <div class="section-tag mb-4">Guide</div>
+      <h2 class="font-display text-4xl font-black text-gray-900 mb-4">
+        Comment ça <span class="grad-text">marche ?</span>
+      </h2>
+    </div>
+
+    <!-- Tabs: Conducteur / Passager -->
+    <div class="flex justify-center mb-12 fade-up">
+      <div class="bg-gray-100 rounded-2xl p-1.5 flex gap-1">
+        <button id="tab-driver" class="tab-btn active" onclick="switchTab('driver')">🚗 Conducteur</button>
+        <button id="tab-passenger" class="tab-btn" onclick="switchTab('passenger')">🧍 Passager</button>
+      </div>
+    </div>
+
+    <!-- Driver steps -->
+    <div id="steps-driver" class="grid md:grid-cols-4 gap-6 fade-up">
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-violet-200">📝</div>
+        <div class="font-mono text-xs text-violet-500">ÉTAPE 01</div>
+        <div class="font-display font-bold text-gray-900">Créez votre compte</div>
+        <div class="text-sm text-gray-500">Inscrivez-vous avec votre email UPC et votre carte étudiant</div>
+      </div>
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-violet-200">🗺️</div>
+        <div class="font-mono text-xs text-violet-500">ÉTAPE 02</div>
+        <div class="font-display font-bold text-gray-900">Publiez un trajet</div>
+        <div class="text-sm text-gray-500">Indiquez votre départ, horaire et nombre de places</div>
+      </div>
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-violet-200">👥</div>
+        <div class="font-mono text-xs text-violet-500">ÉTAPE 03</div>
+        <div class="font-display font-bold text-gray-900">Acceptez des passagers</div>
+        <div class="text-sm text-gray-500">Les étudiants réservent leurs places, vous confirmez</div>
+      </div>
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-amber-200">💵</div>
+        <div class="font-mono text-xs text-amber-500">ÉTAPE 04</div>
+        <div class="font-display font-bold text-gray-900">Recevez votre argent</div>
+        <div class="text-sm text-gray-500">70% du paiement versé sur votre Mobile Money après le trajet</div>
+      </div>
+    </div>
+
+    <!-- Passenger steps -->
+    <div id="steps-passenger" class="grid md:grid-cols-4 gap-6 fade-up hidden">
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-violet-200">📝</div>
+        <div class="font-mono text-xs text-violet-500">ÉTAPE 01</div>
+        <div class="font-display font-bold text-gray-900">Inscrivez-vous</div>
+        <div class="text-sm text-gray-500">Créez votre profil étudiant UPC</div>
+      </div>
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-violet-200">🔍</div>
+        <div class="font-mono text-xs text-violet-500">ÉTAPE 02</div>
+        <div class="font-display font-bold text-gray-900">Cherchez un trajet</div>
+        <div class="text-sm text-gray-500">Filtrez par quartier, heure ou conducteur noté</div>
+      </div>
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-violet-200">💳</div>
+        <div class="font-mono text-xs text-violet-500">ÉTAPE 03</div>
+        <div class="font-display font-bold text-gray-900">Payez en avance</div>
+        <div class="text-sm text-gray-500">Confirmez avec Mobile Money avant le trajet</div>
+      </div>
+      <div class="text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl mx-auto shadow-lg shadow-amber-200">⭐</div>
+        <div class="font-mono text-xs text-amber-500">ÉTAPE 04</div>
+        <div class="font-display font-bold text-gray-900">Notez votre trajet</div>
+        <div class="text-sm text-gray-500">Donnez votre avis pour aider la communauté</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     LIVE TRIPS SECTION
+═══════════════════════════════════════════ -->
+<section id="trips" class="py-24 px-6" style="background:#f8f7ff;">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4 fade-up">
+      <div>
+        <div class="section-tag mb-3">En direct</div>
+        <h2 class="font-display text-4xl font-black text-gray-900">Trajets disponibles</h2>
+        <p class="text-gray-500 mt-2">Départs pour l'UPC ce matin</p>
+      </div>
+      <!-- Search -->
+      <div class="flex gap-3 flex-wrap">
+        <div class="relative">
+          <input id="search-input" type="text" placeholder="Rechercher un quartier..." class="form-input pl-10 pr-4 py-3 w-64" oninput="filterTrips()" />
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        </div>
+        <button onclick="openModal('newTrip')" class="btn-violet py-3 text-sm">+ Publier un trajet</button>
+      </div>
+    </div>
+
+    <!-- Trip cards grid -->
+    <div id="trips-grid" class="grid md:grid-cols-3 gap-6">
+      <!-- Trip cards injected by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     STATS SECTION
+═══════════════════════════════════════════ -->
+<section id="stats" class="py-24 px-6 bg-white overflow-hidden">
+  <div class="max-w-7xl mx-auto">
+    <div class="dark-card p-12 md:p-16 relative overflow-hidden">
+      <!-- BG decorations -->
+      <div class="absolute top-0 right-0 w-96 h-96 rounded-full opacity-5" style="background:radial-gradient(circle,#a78bfa,transparent);transform:translate(30%,-30%);"></div>
+      <div class="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-10" style="background:radial-gradient(circle,#f59e0b,transparent);transform:translate(-30%,30%);"></div>
+
+     <!-- <div class="relative z-10">
+        <div class="text-center mb-12">
+          <div class="font-mono text-xs tracking-widest text-violet-400 mb-3">IMPACT · UPC RIDECONNECT</div>
+          <h2 class="font-display text-4xl font-black text-white"><p>Cette application transformera la mobilité des étudiants de l’Université Protestante au Congo en rendant les déplacements plus simples, organisés et fiables au quotidien. 
+            Elle permettra également de réduire considérablement les dépenses de transport grâce au partage des frais entre utilisateurs. 
+            À l’échelle de Kinshasa, elle contribuera à diminuer les embouteillages en limitant le nombre de véhicules en circulation. 
+            Le système d’identification via carte étudiante renforcera la sécurité et la confiance entre les utilisateurs. 
+            Enfin, en réduisant les trajets individuels, elle participera activement à la protection de l’environnement en limitant les émissions polluantes.</p></h2>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 stats-row text-center">
+          <div class="fade-up">
+            <div class="stat-num" id="count-students">0</div>
+            <div class="text-violet-400 text-sm mt-1">Étudiants inscrits</div>
+          </div>
+          <div class="fade-up" style="transition-delay:0.1s">
+            <div class="stat-num" id="count-trips">0</div>
+            <div class="text-violet-400 text-sm mt-1">Trajets effectués</div>
+          </div>
+          <div class="fade-up" style="transition-delay:0.2s">
+            <div class="stat-num" id="count-saved">0</div>
+            <div class="text-violet-400 text-sm mt-1">FC économisés/mois</div>
+          </div>
+          <div class="fade-up" style="transition-delay:0.3s">
+            <div class="stat-num" id="count-zones">0</div>
+            <div class="text-violet-400 text-sm mt-1">Zones couvertes</div>
+          </div>
+        </div>-->
+
+        <div class="mt-12 text-center">
+          <button onclick="openModal('register')" class="btn-primary">
+            🚀 Rejoindre la révolution du transport
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<!--<footer class="py-16 px-6" style="background:#0f0a1e;">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid md:grid-cols-4 gap-10 mb-12">
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-3 mb-4">
+          <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" rx="14" fill="url(#footerLogoGrad)"/>
+            <defs>
+              <linearGradient id="footerLogoGrad" x1="0" y1="0" x2="48" y2="48">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#4c1d95"/>
+              </linearGradient>
+            </defs>
+            <rect x="21" y="8" width="6" height="32" rx="3" fill="white" opacity="0.9"/>
+            <rect x="8" y="21" width="32" height="6" rx="3" fill="white" opacity="0.9"/>
+            <circle cx="12" cy="12" r="3" fill="#f59e0b"/>
+            <circle cx="36" cy="12" r="3" fill="#f59e0b"/>
+            <circle cx="12" cy="36" r="3" fill="#f59e0b"/>
+            <circle cx="36" cy="36" r="3" fill="#f59e0b"/>
+          </svg>
+          <div>
+            <div class="font-display font-bold text-white text-lg">UPC RideConnect</div>
+            <div class="font-mono text-xs text-violet-400">Covoiturage Universitaire</div>
+          </div>
+        </div>
+        <p class="text-gray-400 text-sm leading-relaxed max-w-xs">
+          La plateforme de covoiturage officielle de l'Université Protestante au Congo à Kinshasa. Ensemble, simplifions le transport étudiant.
+        </p>
+      </div>
+      <div>
+        <div class="font-semibold text-white mb-4">Plateforme</div>
+        <div class="space-y-2">
+          <div class="text-gray-400 text-sm hover:text-white cursor-pointer transition-colors">Trouver un trajet</div>
+          <div class="text-gray-400 text-sm hover:text-white cursor-pointer transition-colors">Publier un trajet</div>
+          <div class="text-gray-400 text-sm hover:text-white cursor-pointer transition-colors">Mobile Money</div>
+          <div class="text-gray-400 text-sm hover:text-white cursor-pointer transition-colors">Système de notation</div>
+        </div>
+      </div>
+      <div>
+        <div class="font-semibold text-white mb-4">Contact</div>
+        <div class="space-y-2">
+          <div class="text-gray-400 text-sm">📧 ride@upc.ac.cd</div>
+          <div class="text-gray-400 text-sm">📱 +243 81 234 5678</div>
+          <div class="text-gray-400 text-sm">📍 UPC, Kinshasa, RDC</div>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="text-gray-600 text-xs font-mono">© 2024 UPC RideConnect · Université Protestante au Congo</div>
+      <div class="flex gap-4">
+        <span class="text-gray-600 text-xs hover:text-gray-400 cursor-pointer">Confidentialité</span>
+        <span class="text-gray-600 text-xs hover:text-gray-400 cursor-pointer">Conditions</span>
+        <span class="text-gray-600 text-xs hover:text-gray-400 cursor-pointer">API</span>
+      </div>
+    </div>
+  </div>
+</footer>-->
+
+
+<!-- ═══════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════ -->
+
+<!-- LOGIN MODAL -->
+<div id="modal-login" class="modal-overlay" onclick="closeModalOnOverlay(event,'login')">
+  <div class="modal-box">
+    <button onclick="closeModal('login')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">✕</button>
+    <div class="text-center mb-8">
+      <div class="w-14 h-14 rounded-2xl bg-violet-600 flex items-center justify-center text-2xl mx-auto mb-4">🎓</div>
+      <h3 class="font-display text-2xl font-bold text-gray-900">Bienvenue</h3>
+      <p class="text-gray-500 text-sm mt-1">Connectez-vous à votre compte étudiant</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-sm font-medium text-gray-700 block mb-1.5">Email universitaire</label>
+        <input type="email" placeholder="prenom.nom@upc.ac.cd" class="form-input" id="login-email"/>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700 block mb-1.5">Mot de passe</label>
+        <input type="password" placeholder="••••••••" class="form-input" id="login-pwd"/>
+      </div>
+      <button onclick="handleLogin()" class="btn-violet w-full justify-center py-3.5 mt-2">
+        Se connecter
+      </button>
+      <div class="text-center text-sm text-gray-500">
+        Pas encore de compte ? <span onclick="switchModal('login','register')" class="text-violet-600 font-semibold cursor-pointer hover:underline">S'inscrire</span>
+      </div>
+    </div>
+    <!-- Demo tip -->
+    <div class="mt-5 bg-violet-50 border border-violet-100 rounded-xl p-3 text-xs text-violet-600">
+      💡 <strong>Démo :</strong> Email: <span class="font-mono">etudiant@upc.ac.cd</span> · Mot de passe: <span class="font-mono">demo123</span>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div id="modal-register" class="modal-overlay" onclick="closeModalOnOverlay(event,'register')">
+  <div class="modal-box">
+    <button onclick="closeModal('register')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">✕</button>
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 rounded-2xl bg-violet-600 flex items-center justify-center text-2xl mx-auto mb-3">✨</div>
+      <h3 class="font-display text-2xl font-bold text-gray-900">Créez votre compte</h3>
+      <p class="text-gray-500 text-sm mt-1">Rejoignez la communauté UPC RideConnect</p>
+    </div>
+    <div class="space-y-3" id="register-form">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-gray-600 block mb-1">Prénom</label>
+          <input type="text" placeholder="Jean-Paul" class="form-input text-sm" id="reg-firstname"/>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600 block mb-1">Nom</label>
+          <input type="text" placeholder="Kabila" class="form-input text-sm" id="reg-lastname"/>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Email universitaire UPC</label>
+        <input type="email" placeholder="prenom.nom@upc.ac.cd" class="form-input text-sm" id="reg-email"/>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Numéro de carte étudiant</label>
+        <input type="text" placeholder="UPC-2024-XXXX" class="form-input text-sm" id="reg-card"/>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Téléphone (Mobile Money)</label>
+        <input type="tel" placeholder="+243 81 234 5678" class="form-input text-sm" id="reg-phone"/>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Je suis</label>
+        <select class="form-input text-sm" id="reg-role">
+          <option value="passenger">Passager (je cherche des trajets)</option>
+          <option value="driver">Conducteur (j'offre des trajets)</option>
+          <option value="both">Les deux</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Mot de passe</label>
+        <input type="password" placeholder="••••••••" class="form-input text-sm" id="reg-pwd"/>
+      </div>
+      <button onclick="handleRegister()" class="btn-primary w-full justify-center py-3 mt-1 text-sm">
+        🎓 Créer mon compte étudiant
+      </button>
+      <div class="text-center text-xs text-gray-500">
+        Déjà inscrit ? <span onclick="switchModal('register','login')" class="text-violet-600 font-semibold cursor-pointer hover:underline">Se connecter</span>
+      </div>
+    </div>
+    <!-- Success state (hidden) -->
+    <div id="register-success" class="hidden text-center py-8">
+      <div class="text-5xl mb-4">🎉</div>
+      <h4 class="font-display text-xl font-bold text-gray-900 mb-2">Compte créé avec succès !</h4>
+      <p class="text-sm text-gray-500 mb-6">Bienvenue dans la communauté UPC RideConnect. Votre compte est en cours de vérification.</p>
+      <button onclick="closeModal('register'); openDashboard();" class="btn-violet justify-center w-full">
+        Accéder à mon tableau de bord
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW TRIP MODAL -->
+<div id="modal-newTrip" class="modal-overlay" onclick="closeModalOnOverlay(event,'newTrip')">
+  <div class="modal-box">
+    <button onclick="closeModal('newTrip')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">✕</button>
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 rounded-2xl bg-violet-600 flex items-center justify-center text-2xl mx-auto mb-3">🚗</div>
+      <h3 class="font-display text-2xl font-bold text-gray-900">Publier un trajet</h3>
+      <p class="text-gray-500 text-sm mt-1">Partagez votre trajet vers l'UPC</p>
+    </div>
+    <div class="space-y-4" id="trip-form">
+      <div>
+        <label class="text-sm font-medium text-gray-700 block mb-1.5">📍 Point de départ</label>
+        <select class="form-input" id="trip-from">
+          <option value="">Choisissez votre quartier</option>
+          <option>Lingwala</option><option>Barumbu</option><option>Kinshasa (commune)</option>
+          <option>Gombe</option><option>Ngaliema</option><option>Kalamu</option>
+          <option>Lemba</option><option>Limete</option><option>Makala</option>
+          <option>Ndjili</option><option>Masina</option><option>Kimbanseke</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700 block mb-1.5">🎓 Destination</label>
+        <input type="text" value="Campus UPC — Kinshasa" class="form-input bg-gray-50" readonly/>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-medium text-gray-700 block mb-1.5">🕐 Heure de départ</label>
+          <input type="time" class="form-input" id="trip-time" value="07:30"/>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700 block mb-1.5">💺 Places disponibles</label>
+          <select class="form-input" id="trip-seats">
+            <option value="1">1 place</option>
+            <option value="2">2 places</option>
+            <option value="3" selected>3 places</option>
+            <option value="4">4 places</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700 block mb-1.5">💰 Prix par passager (FC)</label>
+        <input type="number" placeholder="ex: 2500" class="form-input" id="trip-price" value="2500"/>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700 block mb-1.5">📝 Points de passage (optionnel)</label>
+        <input type="text" placeholder="ex: Rond-point Victoire, Avenue Kasa-Vubu" class="form-input" id="trip-waypoints"/>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+        <div class="font-medium text-amber-800 mb-1">💡 Répartition automatique</div>
+        <div class="text-amber-700 text-xs">Vous recevrez <strong>70%</strong> du paiement via Mobile Money. 30% va à la plateforme.</div>
+      </div>
+      <button onclick="handlePublishTrip()" class="btn-primary w-full justify-center py-3">
+        🚀 Publier le trajet
+      </button>
+    </div>
+    <div id="trip-success" class="hidden text-center py-8">
+      <div class="text-5xl mb-4">✅</div>
+      <h4 class="font-display text-xl font-bold text-gray-900 mb-2">Trajet publié !</h4>
+      <p class="text-sm text-gray-500 mb-6">Votre trajet est maintenant visible pour tous les étudiants de votre zone.</p>
+      <button onclick="closeModal('newTrip');" class="btn-violet justify-center">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div id="modal-booking" class="modal-overlay" onclick="closeModalOnOverlay(event,'booking')">
+  <div class="modal-box">
+    <button onclick="closeModal('booking')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">✕</button>
+    <div class="mb-6">
+      <h3 class="font-display text-2xl font-bold text-gray-900 mb-1">Réserver ce trajet</h3>
+      <p class="text-gray-500 text-sm" id="booking-detail">Chargement...</p>
+    </div>
+
+    <!-- Payment simulation -->
+    <div class="space-y-3 mb-6" id="payment-steps">
+      <div class="payment-step active" id="pay-step-1">
+        <div class="w-8 h-8 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-sm flex-shrink-0">1</div>
+        <div>
+          <div class="font-medium text-sm text-gray-800">Choisissez votre paiement</div>
+          <div class="text-xs text-gray-500">Mobile Money sécurisé</div>
+        </div>
+      </div>
+      <div class="payment-step" id="pay-step-2">
+        <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-sm flex-shrink-0">2</div>
+        <div>
+          <div class="font-medium text-sm text-gray-500">Confirmation du paiement</div>
+          <div class="text-xs text-gray-400">Vérification en cours...</div>
+        </div>
+      </div>
+      <div class="payment-step" id="pay-step-3">
+        <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-sm flex-shrink-0">3</div>
+        <div>
+          <div class="font-medium text-sm text-gray-500">Place réservée ✓</div>
+          <div class="text-xs text-gray-400">Votre trajet est confirmé</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Money selector -->
+    <div id="mm-selector" class="space-y-3">
+      <div class="font-medium text-sm text-gray-700 mb-2">Choisissez votre opérateur :</div>
+      <div class="grid grid-cols-3 gap-3">
+        <div onclick="selectMM(this,'M-Pesa')" class="mm-option border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer transition-all hover:border-violet-400">
+          <div class="text-2xl mb-1">📱</div>
+          <div class="text-xs font-semibold text-gray-700">M-Pesa</div>
+        </div>
+        <div onclick="selectMM(this,'Airtel Money')" class="mm-option border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer transition-all hover:border-violet-400">
+          <div class="text-2xl mb-1">🔴</div>
+          <div class="text-xs font-semibold text-gray-700">Airtel</div>
+        </div>
+        <div onclick="selectMM(this,'Orange Money')" class="mm-option border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer transition-all hover:border-violet-400">
+          <div class="text-2xl mb-1">🟠</div>
+          <div class="text-xs font-semibold text-gray-700">Orange</div>
+        </div>
+      </div>
+      <input type="tel" placeholder="Votre numéro Mobile Money" class="form-input mt-2" id="mm-number"/>
+      <div id="amount-display" class="mm-card mt-3">
+        <div class="font-mono text-xs opacity-70 mb-1">MONTANT À PAYER</div>
+        <div class="font-display text-3xl font-black" id="price-display">2 500 FC</div>
+        <div class="text-xs opacity-70 mt-1">Dont 1 750 FC → conducteur · 750 FC → plateforme</div>
+      </div>
+      <button onclick="simulatePayment()" class="btn-primary w-full justify-center py-3.5">
+        💳 Payer maintenant
+      </button>
+    </div>
+
+    <div id="booking-success" class="hidden text-center py-6">
+      <div class="text-5xl mb-4">🎊</div>
+      <h4 class="font-display text-xl font-bold text-gray-900 mb-2">Trajet réservé !</h4>
+      <p class="text-sm text-gray-500 mb-2">Votre place est confirmée. Le conducteur sera notifié.</p>
+      <div class="bg-violet-50 rounded-xl p-3 text-sm text-violet-700 mb-4">
+        <strong>Point de rencontre :</strong><br/><span id="meeting-point">Rond-point Victoire · 7h15</span>
+      </div>
+      <button onclick="closeModal('booking');" class="btn-violet justify-center w-full">Parfait !</button>
+    </div>
+  </div>
+</div>
+
+<!-- RATING MODAL -->
+<div id="modal-rating" class="modal-overlay" onclick="closeModalOnOverlay(event,'rating')">
+  <div class="modal-box">
+    <button onclick="closeModal('rating')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">✕</button>
+    <div class="text-center mb-6">
+      <div class="text-4xl mb-3">⭐</div>
+      <h3 class="font-display text-2xl font-bold text-gray-900">Notez votre trajet</h3>
+      <p class="text-gray-500 text-sm mt-1">Votre avis aide toute la communauté</p>
+    </div>
+    <div class="flex justify-center gap-3 mb-6" id="rating-stars">
+      <span class="rating-star text-4xl cursor-pointer grayscale transition-all hover:grayscale-0" data-val="1" onclick="setRating(1)">⭐</span>
+      <span class="rating-star text-4xl cursor-pointer grayscale transition-all hover:grayscale-0" data-val="2" onclick="setRating(2)">⭐</span>
+      <span class="rating-star text-4xl cursor-pointer grayscale transition-all hover:grayscale-0" data-val="3" onclick="setRating(3)">⭐</span>
+      <span class="rating-star text-4xl cursor-pointer grayscale transition-all hover:grayscale-0" data-val="4" onclick="setRating(4)">⭐</span>
+      <span class="rating-star text-4xl cursor-pointer grayscale transition-all hover:grayscale-0" data-val="5" onclick="setRating(5)">⭐</span>
+    </div>
+    <div class="mb-4">
+      <textarea placeholder="Un commentaire sur le trajet ? (optionnel)" class="form-input resize-none h-24" id="rating-comment"></textarea>
+    </div>
+    <button onclick="submitRating()" class="btn-primary w-full justify-center py-3">
+      Soumettre mon avis
+    </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD PANEL
+═══════════════════════════════════════════ -->
+<div id="dashboard-panel">
+  <div class="min-h-screen">
+    <!-- Dashboard Header -->
+    <div style="background:linear-gradient(135deg,#1e0a3c 0%,#4c1d95 100%);" class="px-6 py-8">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl overflow-hidden border-2 border-violet-400">
+            <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&q=80" alt="Avatar" class="w-full h-full object-cover"/>
+          </div>
+          <div>
+            <div class="text-white font-display text-xl font-bold" id="dashboard-name">Jean-Paul K.</div>
+            <div class="text-violet-300 text-sm font-mono">UPC-2024-0847 · Étudiant vérifié ✓</div>
+          </div>
+        </div>
+        <button onclick="closeDashboard()" class="text-white/70 hover:text-white transition-colors flex items-center gap-2 text-sm">
+          <span>← Retour</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="max-w-4xl mx-auto px-6 py-8 space-y-8">
+      <!-- Quick stats -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="glass-card p-5 text-center">
+          <div class="text-2xl font-display font-black text-violet-700">12</div>
+          <div class="text-xs text-gray-500 mt-1">Trajets effectués</div>
+        </div>
+        <div class="glass-card p-5 text-center">
+          <div class="text-2xl font-display font-black text-amber-500">4.8</div>
+          <div class="text-xs text-gray-500 mt-1">Note moyenne</div>
+        </div>
+        <div class="glass-card p-5 text-center">
+          <div class="text-2xl font-display font-black text-green-600">28K</div>
+          <div class="text-xs text-gray-500 mt-1">FC économisés</div>
+        </div>
+      </div>
+
+      <!-- Mes trajets -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-display text-xl font-bold text-gray-900">Mes trajets récents</h3>
+          <button onclick="openModal('newTrip'); closeDashboard();" class="btn-violet text-sm py-2 px-4">+ Nouveau</button>
+        </div>
+        <div class="space-y-3">
+          <div class="trip-card flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">✅</div>
+            <div class="flex-1">
+              <div class="font-semibold text-gray-900 text-sm">Lingwala → UPC</div>
+              <div class="text-xs text-gray-500">Aujourd'hui · 7h30 · 3 passagers</div>
+            </div>
+            <div class="text-green-600 font-mono text-sm font-bold">+5 250 FC</div>
+          </div>
+          <div class="trip-card flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">🔵</div>
+            <div class="flex-1">
+              <div class="font-semibold text-gray-900 text-sm">Lemba → UPC</div>
+              <div class="text-xs text-gray-500">Hier · 8h00 · 2 passagers</div>
+            </div>
+            <div class="text-blue-600 font-mono text-sm font-bold">+3 500 FC</div>
+          </div>
+          <div class="trip-card flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">⏳</div>
+            <div class="flex-1">
+              <div class="font-semibold text-gray-900 text-sm">Ngaliema → UPC</div>
+              <div class="text-xs text-gray-500">Demain · 7h00 · 2 places disponibles</div>
+            </div>
+            <button onclick="openModal('rating'); closeDashboard();" class="text-xs text-violet-600 border border-violet-200 rounded-lg px-3 py-1.5 hover:bg-violet-50 transition-colors">Noter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommandations -->
+      <div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-4">🤖 Trajets recommandés pour vous</h3>
+        <div class="bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 rounded-2xl p-5 text-sm text-gray-600">
+          Basé sur votre historique, ces trajets correspondent à votre profil :<br/><br/>
+          <strong class="text-violet-700">🏠 Lingwala</strong> → UPC · 7h30 · 3 trajets similaires disponibles<br/>
+          <strong class="text-violet-700">🏠 Barumbu</strong> → UPC · 8h00 · 2 conducteurs bien notés
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div>
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-4">🔔 Notifications</h3>
+        <div class="space-y-3">
+          <div class="glass-card p-4 flex gap-3 items-start">
+            <span class="text-lg">📨</span>
+            <div>
+              <div class="text-sm font-medium text-gray-900">Nouvelle réservation</div>
+              <div class="text-xs text-gray-500">Marie A. a réservé une place pour votre trajet de demain</div>
+              <div class="text-xs text-violet-500 mt-1">Il y a 5 min</div>
+            </div>
+          </div>
+          <div class="glass-card p-4 flex gap-3 items-start">
+            <span class="text-lg">💰</span>
+            <div>
+              <div class="text-sm font-medium text-gray-900">Paiement reçu</div>
+              <div class="text-xs text-gray-500">2 450 FC via M-Pesa de Patrick M.</div>
+              <div class="text-xs text-violet-500 mt-1">Il y a 2h</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+// ── DATA ──────────────────────────────────────────────
+const TRIPS_DATA = [
+  { id:1, driver:"Jean-Paul K.", avatar:"c:/Users/Administrator/Pictures/Camera Roll/WhatsApp Image 2026-03-23 at 03.49.48 (1).jpeg", from:"Lingwala", time:"07:30", seats:3, price:2500, rating:4.9, waypoints:"Rond-point Victoire", phone:"+243 81 111 1111" },
+  { id:2, driver:"Nathalie M.", avatar:"c:/Users/Administrator/Pictures/Camera Roll/WhatsApp Image 2026-03-23 at 15.32.31 (1).jpeg", from:"Barumbu", time:"08:00", seats:2, price:2000, rating:4.7, waypoints:"Avenue Kasa-Vubu", phone:"+243 82 222 2222" },
+  { id:3, driver:"Patrick L.", avatar:"c:/Users/Administrator/Pictures/Camera Roll/WhatsApp Image 2026-03-23 at 15.33.58.jpeg", from:"Ngaliema", time:"07:00", seats:4, price:3000, rating:5.0, waypoints:"Rond-point Ngaba", phone:"+243 99 333 3333" },
+  { id:4, driver:"Cécile B.", avatar:"c:/Users/Administrator/Pictures/Camera Roll/WhatsApp Image 2026-03-23 at 15.32.31.jpeg", from:"Lemba", time:"08:30", seats:3, price:2200, rating:4.6, waypoints:"Croisement Tshopo", phone:"+243 81 444 4444" },
+  { id:5, driver:"David K.", avatar:"c:/Users/Administrator/Pictures/Camera Roll/WhatsApp Image 2026-03-23 at 15.40.01.jpeg", from:"Kalamu", time:"07:45", seats:1, price:1800, rating:4.8, waypoints:"Rond-point Victoire", phone:"+243 90 555 5555" },
+  { id:6, driver:"Lydia S.", avatar:"c:/Users/Administrator/Pictures/Camera Roll/WhatsApp Image 2026-03-23 at 15.32.31 (2).jpeg", from:"Gombe", time:"09:00", seats:3, price:2800, rating:4.9, waypoints:"Place de la Gare", phone:"+243 81 666 6666" },
+];
+
+let currentUser = null;
+let selectedMM = null;
+let currentRating = 0;
+let currentBookingTrip = null;
+
+// ── RENDER TRIPS ───────────────────────────────────────
+function renderTrips(data) {
+  const grid = document.getElementById('trips-grid');
+  grid.innerHTML = '';
+  if (data.length === 0) {
+    grid.innerHTML = '<div class="col-span-3 text-center py-12 text-gray-400">Aucun trajet trouvé pour ce quartier.</div>';
+    return;
+  }
+  data.forEach((t,i) => {
+    const card = document.createElement('div');
+    card.className = 'trip-card fade-up';
+    card.style.transitionDelay = (i * 0.05) + 's';
+    const seatsColor = t.seats === 1 ? 'text-red-500' : t.seats <= 2 ? 'text-amber-500' : 'text-green-600';
+    card.innerHTML = `
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="avatar-ring flex-shrink-0">
+            <img src="${t.avatar}" alt="${t.driver}" class="w-full h-full object-cover"/>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-900 text-sm">${t.driver}</div>
+            <div class="flex items-center gap-1 mt-0.5">
+              <span class="star">★</span>
+              <span class="text-xs font-mono text-gray-600">${t.rating}</span>
+            </div>
+          </div>
+        </div>
+        <div class="font-mono font-bold text-violet-700 text-sm">${t.time}</div>
+      </div>
+
+      <!-- Route -->
+      <div class="flex gap-3 mb-4">
+        <div class="flex flex-col items-center pt-1">
+          <div class="route-dot" style="background:#7c3aed;"></div>
+          <div class="route-line"></div>
+          <div class="route-dot" style="background:#f59e0b;"></div>
+        </div>
+        <div class="space-y-3 flex-1">
+          <div>
+            <div class="text-xs text-gray-400">Départ</div>
+            <div class="font-semibold text-gray-900 text-sm">${t.from}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400">Destination</div>
+            <div class="font-semibold text-gray-900 text-sm">Campus UPC 🎓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waypoints -->
+      <div class="bg-violet-50 rounded-xl px-3 py-2 text-xs text-violet-600 mb-4">
+        📍 Via ${t.waypoints}
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="${seatsColor} font-bold text-sm">💺 ${t.seats} place${t.seats > 1 ? 's' : ''}</span>
+          <span class="text-gray-400 text-xs ml-2">restante${t.seats > 1 ? 's' : ''}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="font-display font-black text-violet-700">${t.price.toLocaleString()} <span class="text-xs font-mono font-normal">FC</span></span>
+          <button onclick="bookTrip(${t.id})" class="btn-violet py-2 px-4 text-xs rounded-xl">Réserver</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 100 + i * 60);
+  });
+}
+
+function filterTrips() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const filtered = TRIPS_DATA.filter(t => t.from.toLowerCase().includes(query) || t.driver.toLowerCase().includes(query));
+  renderTrips(filtered);
+}
+
+// ── BOOK TRIP ──────────────────────────────────────────
+function bookTrip(id) {
+  if (!currentUser) {
+    openModal('login');
+    return;
+  }
+  const trip = TRIPS_DATA.find(t => t.id === id);
+  currentBookingTrip = trip;
+  document.getElementById('booking-detail').textContent = `${trip.from} → UPC · ${trip.time} avec ${trip.driver}`;
+  document.getElementById('price-display').textContent = trip.price.toLocaleString() + ' FC';
+  document.getElementById('mm-selector').classList.remove('hidden');
+  document.getElementById('booking-success').classList.add('hidden');
+  // Reset payment steps
+  ['pay-step-1','pay-step-2','pay-step-3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if (i === 0) el.classList.add('active');
+  });
+  selectedMM = null;
+  document.querySelectorAll('.mm-option').forEach(el => el.classList.remove('border-violet-600','bg-violet-50'));
+  openModal('booking');
+}
+
+function selectMM(el, name) {
+  selectedMM = name;
+  document.querySelectorAll('.mm-option').forEach(e => e.classList.remove('border-violet-600','bg-violet-50'));
+  el.classList.add('border-violet-600','bg-violet-50');
+}
+
+function simulatePayment() {
+  if (!selectedMM) { alert('Veuillez sélectionner un opérateur Mobile Money'); return; }
+  const phone = document.getElementById('mm-number').value;
+  if (!phone) { alert('Veuillez entrer votre numéro Mobile Money'); return; }
+
+  // Step 2
+  const s2 = document.getElementById('pay-step-2');
+  document.getElementById('pay-step-1').classList.remove('active'); document.getElementById('pay-step-1').classList.add('done');
+  s2.classList.add('active');
+
+  setTimeout(() => {
+    s2.classList.remove('active'); s2.classList.add('done');
+    document.getElementById('pay-step-3').classList.add('done');
+
+    // Show success
+    setTimeout(() => {
+      document.getElementById('mm-selector').classList.add('hidden');
+      document.getElementById('booking-success').classList.remove('hidden');
+      if (currentBookingTrip) {
+        document.getElementById('meeting-point').textContent = `${currentBookingTrip.waypoints} · ${subtractMinutes(currentBookingTrip.time, 15)}`;
+      }
+    }, 400);
+  }, 2000);
+}
+
+function subtractMinutes(timeStr, mins) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = h * 60 + m - mins;
+  const nh = Math.floor(total / 60), nm = total % 60;
+  return `${String(nh).padStart(2,'0')}h${String(nm).padStart(2,'0')}`;
+}
+
+// ── AUTH ───────────────────────────────────────────────
+function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const pwd = document.getElementById('login-pwd').value;
+  if (!email || !pwd) { alert('Veuillez remplir tous les champs'); return; }
+  // Demo auth
+  if (email === 'etudiant@upc.ac.cd' && pwd === 'demo123' || email.includes('@upc.ac.cd')) {
+    currentUser = { name: 'Jean-Paul K.', email };
+    closeModal('login');
+    openDashboard();
+  } else {
+    alert('Identifiants invalides. Utilisez votre email @upc.ac.cd');
+  }
+}
+
+function handleRegister() {
+  const fields = ['reg-firstname','reg-lastname','reg-email','reg-card','reg-phone','reg-pwd'];
+  const values = fields.map(id => document.getElementById(id).value);
+  if (values.some(v => !v)) { alert('Veuillez remplir tous les champs'); return; }
+  if (!values[2].includes('@upc.ac.cd') && !values[2].includes('@')) { alert('Utilisez votre email universitaire UPC'); return; }
+
+  currentUser = { name: values[0] + ' ' + values[1], email: values[2] };
+  document.getElementById('register-form').classList.add('hidden');
+  document.getElementById('register-success').classList.remove('hidden');
+}
+
+// ── PUBLISH TRIP ───────────────────────────────────────
+function handlePublishTrip() {
+  const from = document.getElementById('trip-from').value;
+  const time = document.getElementById('trip-time').value;
+  const seats = parseInt(document.getElementById('trip-seats').value);
+  const price = parseInt(document.getElementById('trip-price').value);
+  if (!from || !time || !seats || !price) { alert('Veuillez remplir tous les champs'); return; }
+
+  // Add to data
+  TRIPS_DATA.unshift({
+    id: TRIPS_DATA.length + 1,
+    driver: currentUser ? currentUser.name : 'Vous',
+    avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&q=80',
+    from, time, seats, price,
+    rating: 5.0,
+    waypoints: document.getElementById('trip-waypoints').value || 'À confirmer',
+    phone: '+243 XX XXX XXXX'
+  });
+
+  document.getElementById('trip-form').classList.add('hidden');
+  document.getElementById('trip-success').classList.remove('hidden');
+  setTimeout(() => { renderTrips(TRIPS_DATA); }, 500);
+}
+
+// ── RATING ─────────────────────────────────────────────
+function setRating(val) {
+  currentRating = val;
+  document.querySelectorAll('.rating-star').forEach((s, i) => {
+    s.classList.toggle('grayscale', i >= val);
+  });
+}
+function submitRating() {
+  if (!currentRating) { alert('Veuillez sélectionner une note'); return; }
+  closeModal('rating');
+  setTimeout(() => alert(`✅ Merci ! Votre note de ${currentRating}/5 a été enregistrée.`), 300);
+}
+
+// ── MODAL MANAGEMENT ──────────────────────────────────
+function openModal(name) {
+  document.getElementById('modal-' + name).classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(name) {
+  document.getElementById('modal-' + name).classList.remove('active');
+  document.body.style.overflow = '';
+}
+function closeModalOnOverlay(e, name) {
+  if (e.target.id === 'modal-' + name) closeModal(name);
+}
+function switchModal(from, to) {
+  closeModal(from);
+  setTimeout(() => openModal(to), 200);
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+function openDashboard() {
+  if (currentUser) document.getElementById('dashboard-name').textContent = currentUser.name;
+  document.getElementById('dashboard-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDashboard() {
+  document.getElementById('dashboard-panel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── TABS ──────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tab-driver').classList.toggle('active', tab === 'driver');
+  document.getElementById('tab-passenger').classList.toggle('active', tab === 'passenger');
+  document.getElementById('steps-driver').classList.toggle('hidden', tab !== 'driver');
+  document.getElementById('steps-passenger').classList.toggle('hidden', tab !== 'passenger');
+}
+
+// ── SCROLL EFFECTS ────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const navbar = document.getElementById('navbar');
+  navbar.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+function scrollToSection(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── INTERSECTION OBSERVER ────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ── COUNTER ANIMATION ────────────────────────────────
+const counters = {
+  'count-students': 2400,
+  'count-trips':    8720,
+  'count-saved':    4200000,
+  'count-zones':    24
+};
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      const target = counters[id];
+      let current = 0;
+      const step = target / 60;
+      const interval = setInterval(() => {
+        current = Math.min(current + step, target);
+        if (target >= 1000000) {
+          e.target.textContent = (current / 1000000).toFixed(1) + 'M';
+        } else if (target >= 1000) {
+          e.target.textContent = (current / 1000).toFixed(0) + 'K';
+        } else {
+          e.target.textContent = Math.floor(current);
+        }
+        if (current >= target) clearInterval(interval);
+      }, 25);
+      counterObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+Object.keys(counters).forEach(id => {
+  const el = document.getElementById(id);
+  if (el) counterObserver.observe(el);
+});
+
+// ── INIT ─────────────────────────────────────────────
+renderTrips(TRIPS_DATA);
+
+// Animate fade-ups that are already in view
+setTimeout(() => {
+  document.querySelectorAll('.fade-up').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight) el.classList.add('visible');
+  });
+}, 100);
+</script>
+</body>
+</html>
