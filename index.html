@@ -1410,12 +1410,12 @@
 <script>
 // ── DATA ──────────────────────────────────────────────
 const TRIPS_DATA = [
-  { id:1, driver:"Jean-Paul K.", avatar:"c:/Users/Administrator/Documents/META/images/WhatsApp Image 2026-03-23 at 03.49.48 (1).jpeg", from:"Lingwala", time:"07:30", seats:3, price:2500, rating:4.9, waypoints:"Rond-point Victoire", phone:"+243 81 111 1111" },
-  { id:2, driver:"Nathalie M.", avatar:"c:/Users/Administrator/Documents/META/images/WhatsApp Image 2026-03-23 at 15.32.31 (1).jpeg", from:"Barumbu", time:"08:00", seats:2, price:2000, rating:4.7, waypoints:"Avenue Kasa-Vubu", phone:"+243 82 222 2222" },
-  { id:3, driver:"Patrick L.", avatar:"c:/Users/Administrator/Documents/META/images/WhatsApp Image 2026-03-23 at 15.33.58.jpeg", from:"Ngaliema", time:"07:00", seats:4, price:3000, rating:5.0, waypoints:"Rond-point Ngaba", phone:"+243 99 333 3333" },
-  { id:4, driver:"Cécile B.", avatar:"c:/Users/Administrator/Documents/META/images/WhatsApp Image 2026-03-23 at 15.32.31.jpeg", from:"Lemba", time:"08:30", seats:3, price:2200, rating:4.6, waypoints:"Croisement Tshopo", phone:"+243 81 444 4444" },
-  { id:5, driver:"David K.", avatar:"c:/Users/Administrator/Documents/META/images/WhatsApp Image 2026-03-23 at 15.40.01.jpeg", from:"Kalamu", time:"07:45", seats:1, price:1800, rating:4.8, waypoints:"Rond-point Victoire", phone:"+243 90 555 5555" },
-  { id:6, driver:"Lydia S.", avatar:"c:/Users/Administrator/Documents/META/images/WhatsApp Image 2026-03-23 at 15.32.31 (2).jpeg", from:"Gombe", time:"09:00", seats:3, price:2800, rating:4.9, waypoints:"Place de la Gare", phone:"+243 81 666 6666" },
+  { id:1, driver:"Jean-Paul K.", avatar:"images/WhatsApp Image 2026-03-23 at 03.49.48 (1).jpeg", from:"Lingwala", time:"07:30", seats:3, price:2500, rating:4.9, waypoints:"Rond-point Victoire", phone:"+243 81 111 1111" },
+  { id:2, driver:"Nathalie M.", avatar:"images/WhatsApp Image 2026-03-23 at 15.32.31 (1).jpeg", from:"Barumbu", time:"08:00", seats:2, price:2000, rating:4.7, waypoints:"Avenue Kasa-Vubu", phone:"+243 82 222 2222" },
+  { id:3, driver:"Patrick L.", avatar:"images/WhatsApp Image 2026-03-23 at 15.33.58.jpeg", from:"Ngaliema", time:"07:00", seats:4, price:3000, rating:5.0, waypoints:"Rond-point Ngaba", phone:"+243 99 333 3333" },
+  { id:4, driver:"Cécile B.", avatar:"images/WhatsApp Image 2026-03-23 at 15.32.31.jpeg", from:"Lemba", time:"08:30", seats:3, price:2200, rating:4.6, waypoints:"Croisement Tshopo", phone:"+243 81 444 4444" },
+  { id:5, driver:"David K.", avatar:"images/WhatsApp Image 2026-03-23 at 15.40.01.jpeg", from:"Kalamu", time:"07:45", seats:1, price:1800, rating:4.8, waypoints:"Rond-point Victoire", phone:"+243 90 555 5555" },
+  { id:6, driver:"Lydia S.", avatar:"images/WhatsApp Image 2026-03-23 at 15.32.31 (2).jpeg", from:"Gombe", time:"09:00", seats:3, price:2800, rating:4.9, waypoints:"Place de la Gare", phone:"+243 81 666 6666" },
 ];
 
 let currentUser = null;
@@ -1599,7 +1599,7 @@ function handlePublishTrip() {
   TRIPS_DATA.unshift({
     id: TRIPS_DATA.length + 1,
     driver: currentUser ? currentUser.name : 'Vous',
-    avatar: 'c:/Users/Administrator/Documents/META/images/WhatsApp Image 2026-03-23 at 15.32.30.jpeg',
+    avatar: 'images/WhatsApp Image 2026-03-23 at 15.32.30.jpeg',
     from, time, seats, price,
     rating: 5.0,
     waypoints: document.getElementById('trip-waypoints').value || 'À confirmer',
