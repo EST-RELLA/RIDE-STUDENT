@@ -1,331 +1,307 @@
-/* ═══════════════════════════════════════════
-   UPC RideConnect — Carte Leaflet.js
-   ═══════════════════════════════════════════ */
+/**
+ * UPC RideConnect — Carte Leaflet (généré pour index.html)
+ * Données trajets : window.TRIPS_DATA (défini dans index.html)
+ */
+(function () {
+  'use strict';
 
-// Campus UPC coordinates
-var CAMPUS_LAT = -4.3222;
-var CAMPUS_LON = 15.3125;
+  var CAMPUS = { lat: -4.3222, lon: 15.3125 };
+  var PRICE_PER_KM = 300;
 
-// Neighborhoods for demo markers
-var NEIGHBORHOODS = [
-  { name: 'Lingwala',           lat: -4.3167, lon: 15.3000 },
-  { name: 'Barumbu',            lat: -4.3200, lon: 15.3100 },
-  { name: 'Kinshasa (commune)', lat: -4.3250, lon: 15.3150 },
-  { name: 'Gombe',              lat: -4.3100, lon: 15.2900 },
-  { name: 'Ngaliema',           lat: -4.3250, lon: 15.2500 },
-  { name: 'Kalamu',             lat: -4.3350, lon: 15.3150 },
-  { name: 'Lemba',              lat: -4.3500, lon: 15.3300 },
-  { name: 'Limete',             lat: -4.3400, lon: 15.3350 },
-  { name: 'Makala',             lat: -4.3600, lon: 15.3000 },
-  { name: 'Ndjili',             lat: -4.3750, lon: 15.3700 },
-  { name: 'Masina',             lat: -4.3600, lon: 15.3800 },
-  { name: 'Kimbanseke',         lat: -4.3900, lon: 15.3500 },
-];
+  var NEIGHBORHOODS = [
+    { name: 'Lingwala', lat: -4.3167, lon: 15.3 },
+    { name: 'Barumbu', lat: -4.32, lon: 15.31 },
+    { name: 'Kinshasa (commune)', lat: -4.325, lon: 15.315 },
+    { name: 'Gombe', lat: -4.31, lon: 15.29 },
+    { name: 'Ngaliema', lat: -4.325, lon: 15.25 },
+    { name: 'Kalamu', lat: -4.335, lon: 15.315 },
+    { name: 'Lemba', lat: -4.35, lon: 15.33 },
+    { name: 'Limete', lat: -4.34, lon: 15.335 },
+    { name: 'Makala', lat: -4.36, lon: 15.3 },
+    { name: 'Ndjili', lat: -4.375, lon: 15.37 },
+    { name: 'Masina', lat: -4.36, lon: 15.38 },
+    { name: 'Kimbanseke', lat: -4.39, lon: 15.35 },
+  ];
 
-var map = null;
-var markersLayer = null;
-var routeLayer = null;
-var driverMarker = null;
-var trackingInterval = null;
+  var map = null;
+  var routes = null;
+  var markers = null;
+  var driverMarker = null;
+  var trackTimer = null;
+  var mapInitStarted = false;
 
-// Custom icons
-function createIcon(color, size) {
-  return L.divIcon({
-    className: 'custom-marker',
-    html: '<div style="width:' + size + 'px;height:' + size + 'px;background:' + color + ';border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -(size / 2)]
-  });
-}
+  function trips() {
+    return window.TRIPS_DATA && Array.isArray(window.TRIPS_DATA) ? window.TRIPS_DATA : [];
+  }
 
-var iconDeparture = createIcon('#7c3aed', 16);
-var iconMeeting = createIcon('#f59e0b', 14);
-var iconCampus = createIcon('#10b981', 20);
-var iconDriver = createIcon('#ef4444', 18);
+  function toRad(x) {
+    return (x * Math.PI) / 180;
+  }
 
-// Initialize map
-function initMap() {
-  if (map) return;
+  function distanceKm(a, b) {
+    var R = 6371;
+    var dLat = toRad(b.lat - a.lat);
+    var dLon = toRad(b.lon - a.lon);
+    var x =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+  }
 
-  var mapEl = document.getElementById('map');
-  if (!mapEl) return;
-
-  map = L.map('map', {
-    zoomControl: false
-  }).setView([CAMPUS_LAT, CAMPUS_LON], 13);
-
-  // Add zoom control to top-right
-  L.control.zoom({ position: 'topright' }).addTo(map);
-
-  // Tile layer — OpenStreetMap
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap',
-    maxZoom: 18,
-  }).addTo(map);
-
-  markersLayer = L.layerGroup().addTo(map);
-  routeLayer = L.layerGroup().addTo(map);
-
-  // Add campus marker (always visible)
-  L.marker([CAMPUS_LAT, CAMPUS_LON], { icon: iconCampus })
-    .bindPopup(
-      '<div style="text-align:center;font-family:DM Sans,sans-serif;">' +
-      '<strong style="color:#10b981;">&#127891; Campus UPC</strong><br>' +
-      '<span style="font-size:11px;color:#666;">Universite Protestante au Congo</span><br>' +
-      '<span style="font-size:10px;color:#999;">-4.3222, 15.3125</span>' +
-      '</div>'
-    )
-    .addTo(map);
-
-  // Load all trips and neighborhoods on map
-  showAllTrips();
-
-  // Button events
-  document.getElementById('btn-map-all').addEventListener('click', showAllTrips);
-  document.getElementById('btn-map-campus').addEventListener('click', function() {
-    map.flyTo([CAMPUS_LAT, CAMPUS_LON], 15, { duration: 1 });
-  });
-  document.getElementById('btn-map-track').addEventListener('click', function() {
-    var tripId = this.getAttribute('data-trip-id');
-    if (tripId) startTracking(parseInt(tripId));
-  });
-}
-
-// Show all trips as markers on the map
-async function showAllTrips() {
-  stopTracking();
-  markersLayer.clearLayers();
-  routeLayer.clearLayers();
-  document.getElementById('map-trip-info').classList.add('hidden');
-
-  // Add neighborhood markers
-  NEIGHBORHOODS.forEach(function(n) {
-    var marker = L.marker([n.lat, n.lon], { icon: iconDeparture })
-      .bindPopup(
-        '<div style="font-family:DM Sans,sans-serif;">' +
-        '<strong style="color:#7c3aed;">' + n.name + '</strong><br>' +
-        '<span style="font-size:11px;color:#666;">Zone de depart</span>' +
-        '</div>'
+  function pricing(fromName) {
+    var hood = NEIGHBORHOODS.find(function (n) {
+      return (
+        n.name.toLowerCase().includes(String(fromName).toLowerCase()) ||
+        String(fromName).toLowerCase().includes(n.name.toLowerCase())
       );
-    markersLayer.addLayer(marker);
-  });
-
-  // Try loading trips from API
-  var res = await apiCall('GET', '/trips');
-  var trips = (res && res.trips) ? res.trips : TRIPS_DATA;
-
-  trips.forEach(function(trip) {
-    var hood = NEIGHBORHOODS.find(function(n) {
-      return n.name.toLowerCase().includes(trip.from.toLowerCase()) ||
-             trip.from.toLowerCase().includes(n.name.toLowerCase());
     });
-    if (!hood) return;
-
-    // Draw dashed line from neighborhood to campus
-    var line = L.polyline(
-      [[hood.lat, hood.lon], [CAMPUS_LAT, CAMPUS_LON]],
-      { color: '#7c3aed', weight: 2, dashArray: '6,8', opacity: 0.4 }
-    );
-    routeLayer.addLayer(line);
-
-    // Clickable marker for each trip
-    var popup = L.popup().setContent(
-      '<div style="font-family:DM Sans,sans-serif;min-width:160px;">' +
-      '<strong style="color:#7c3aed;">' + trip.driver + '</strong><br>' +
-      '<span style="font-size:11px;">' + trip.from + ' &rarr; Campus UPC</span><br>' +
-      '<span style="font-size:11px;">&#128337; ' + trip.time + ' &middot; ' + trip.seats + ' place(s)</span><br>' +
-      '<span style="font-size:12px;font-weight:bold;color:#7c3aed;">' + trip.price.toLocaleString() + ' FC</span><br>' +
-      '<button onclick="selectTripOnMap(' + trip.id + ')" style="margin-top:6px;background:#7c3aed;color:white;border:none;padding:4px 12px;border-radius:8px;font-size:11px;cursor:pointer;">Voir le trajet</button>' +
-      '</div>'
-    );
-
-    var tripMarker = L.circleMarker([hood.lat, hood.lon], {
-      radius: 8,
-      fillColor: '#7c3aed',
-      color: '#fff',
-      weight: 2,
-      fillOpacity: 0.8
-    }).bindPopup(popup);
-
-    markersLayer.addLayer(tripMarker);
-  });
-
-  // Fit bounds to show all markers
-  var allCoords = NEIGHBORHOODS.map(function(n) { return [n.lat, n.lon]; });
-  allCoords.push([CAMPUS_LAT, CAMPUS_LON]);
-  map.fitBounds(allCoords, { padding: [30, 30] });
-}
-
-// Select a trip and show its info in sidebar
-function selectTripOnMap(tripId) {
-  var trips = TRIPS_DATA;
-  var trip = trips.find(function(t) { return t.id === tripId; });
-  if (!trip) return;
-
-  var infoPanel = document.getElementById('map-trip-info');
-  infoPanel.classList.remove('hidden');
-  document.getElementById('map-trip-driver').textContent = '&#128100; ' + trip.driver;
-  document.getElementById('map-trip-driver').innerHTML = '&#128100; ' + trip.driver;
-  document.getElementById('map-trip-from').innerHTML = '&#128205; ' + trip.from + ' &rarr; Campus UPC &middot; ' + trip.time;
-  document.getElementById('map-trip-eta').innerHTML = '&#128176; ' + trip.price.toLocaleString() + ' FC &middot; ' + trip.seats + ' place(s)';
-  document.getElementById('btn-map-track').setAttribute('data-trip-id', tripId);
-
-  // Highlight route
-  routeLayer.clearLayers();
-  var hood = NEIGHBORHOODS.find(function(n) {
-    return n.name.toLowerCase().includes(trip.from.toLowerCase()) ||
-           trip.from.toLowerCase().includes(n.name.toLowerCase());
-  });
-  if (hood) {
-    var routeLine = L.polyline(
-      [[hood.lat, hood.lon], [CAMPUS_LAT, CAMPUS_LON]],
-      { color: '#7c3aed', weight: 4, dashArray: '8,10', opacity: 0.8 }
-    );
-    routeLayer.addLayer(routeLine);
-    map.fitBounds([[hood.lat, hood.lon], [CAMPUS_LAT, CAMPUS_LON]], { padding: [50, 50] });
-  }
-}
-
-// Start real-time tracking for a trip
-async function startTracking(tripId) {
-  stopTracking();
-
-  // Try API first
-  var res = await apiCall('GET', '/trips/' + tripId + '/location');
-
-  if (res) {
-    updateTrackingUI(res);
-  } else {
-    // Demo mode: simulate driver position
-    simulateDemoTracking(tripId);
+    if (!hood) return { km: 0, fc: 0 };
+    var km = distanceKm({ lat: hood.lat, lon: hood.lon }, { lat: CAMPUS.lat, lon: CAMPUS.lon });
+    return { km: km, fc: Math.round(km * PRICE_PER_KM) };
   }
 
-  // Poll every 10 seconds
-  trackingInterval = setInterval(async function() {
-    var data = await apiCall('GET', '/trips/' + tripId + '/location');
-    if (data) {
-      updateTrackingUI(data);
+  function hoodForTrip(trip) {
+    return NEIGHBORHOODS.find(function (n) {
+      return (
+        n.name.toLowerCase().includes(String(trip.from).toLowerCase()) ||
+        String(trip.from).toLowerCase().includes(n.name.toLowerCase())
+      );
+    });
+  }
+
+  function divIcon(color, size) {
+    return L.divIcon({
+      className: 'upc-mkr',
+      html:
+        '<div style="width:' +
+        size +
+        'px;height:' +
+        size +
+        'px;background:' +
+        color +
+        ';border-radius:50%;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25)"></div>',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  }
+
+  function stopTrack() {
+    if (trackTimer) {
+      clearInterval(trackTimer);
+      trackTimer = null;
     }
-  }, 10000);
-}
-
-function updateTrackingUI(data) {
-  // Remove old driver marker
-  if (driverMarker) {
-    map.removeLayer(driverMarker);
+    if (driverMarker && map) {
+      map.removeLayer(driverMarker);
+      driverMarker = null;
+    }
   }
 
-  // Add driver marker
-  driverMarker = L.marker(
-    [data.current.latitude, data.current.longitude],
-    { icon: iconDriver }
-  ).bindPopup(
-    '<div style="font-family:DM Sans,sans-serif;">' +
-    '<strong style="color:#ef4444;">&#128663; ' + data.driver + '</strong><br>' +
-    '<span style="font-size:11px;">' + data.current.eta + '</span><br>' +
-    '<span style="font-size:10px;color:#666;">Progression: ' + Math.round(data.current.progress * 100) + '%</span>' +
-    '</div>'
-  ).addTo(map);
+  function showAllTrips() {
+    if (!map || !routes || !markers) return;
+    stopTrack();
 
-  // Update route line
-  routeLayer.clearLayers();
+    markers.clearLayers();
+    routes.clearLayers();
 
-  var coords = [[data.departure.latitude, data.departure.longitude]];
-  if (data.meetingPoint) {
-    coords.push([data.meetingPoint.latitude, data.meetingPoint.longitude]);
+    var mti = document.getElementById('map-trip-info');
+    if (mti) mti.classList.add('hidden');
 
-    // Add meeting point marker
-    var mpMarker = L.marker([data.meetingPoint.latitude, data.meetingPoint.longitude], { icon: iconMeeting })
-      .bindPopup('<strong style="color:#f59e0b;">&#128204; ' + data.meetingPoint.name + '</strong>');
-    routeLayer.addLayer(mpMarker);
-  }
-  coords.push([data.destination.latitude, data.destination.longitude]);
-
-  // Full planned route (dashed)
-  var planned = L.polyline(coords, { color: '#7c3aed', weight: 3, dashArray: '6,8', opacity: 0.4 });
-  routeLayer.addLayer(planned);
-
-  // Completed route (solid)
-  var completed = L.polyline(
-    [coords[0], [data.current.latitude, data.current.longitude]],
-    { color: '#7c3aed', weight: 4, opacity: 0.8 }
-  );
-  routeLayer.addLayer(completed);
-
-  // Update sidebar
-  document.getElementById('map-trip-eta').innerHTML = '&#9201; ' + data.current.eta;
-
-  // Center on driver
-  map.panTo([data.current.latitude, data.current.longitude]);
-}
-
-// Demo tracking simulation
-function simulateDemoTracking(tripId) {
-  var trip = TRIPS_DATA.find(function(t) { return t.id === tripId; });
-  if (!trip) return;
-
-  var hood = NEIGHBORHOODS.find(function(n) {
-    return n.name.toLowerCase().includes(trip.from.toLowerCase()) ||
-           trip.from.toLowerCase().includes(n.name.toLowerCase());
-  });
-  if (!hood) return;
-
-  var progress = 0;
-  var startLat = hood.lat;
-  var startLon = hood.lon;
-
-  function tick() {
-    progress += 0.03;
-    if (progress > 1) progress = 0;
-
-    var lat = startLat + (CAMPUS_LAT - startLat) * progress;
-    var lon = startLon + (CAMPUS_LON - startLon) * progress;
-    lat += (Math.random() - 0.5) * 0.0004;
-    lon += (Math.random() - 0.5) * 0.0004;
-
-    var remaining = Math.ceil(30 * (1 - progress));
-
-    updateTrackingUI({
-      driver: trip.driver,
-      departure: { name: trip.from, latitude: startLat, longitude: startLon },
-      destination: { name: 'Campus UPC', latitude: CAMPUS_LAT, longitude: CAMPUS_LON },
-      meetingPoint: null,
-      current: {
-        latitude: lat,
-        longitude: lon,
-        progress: progress,
-        status: 'en_route',
-        eta: remaining + ' min restantes'
-      }
+    NEIGHBORHOODS.forEach(function (n) {
+      L.marker([n.lat, n.lon], { icon: divIcon('#7c3aed', 14) })
+        .bindPopup('<strong style="color:#5b21b6">' + n.name + '</strong><br><span style="font-size:11px">Zone départ</span>')
+        .addTo(markers);
     });
+
+    L.marker([CAMPUS.lat, CAMPUS.lon], { icon: divIcon('#10b981', 18) })
+      .bindPopup('<strong style="color:#047857">Campus UPC</strong>')
+      .addTo(markers);
+
+    trips().forEach(function (trip) {
+      var h = hoodForTrip(trip);
+      if (!h) return;
+      L.polyline(
+        [
+          [h.lat, h.lon],
+          [CAMPUS.lat, CAMPUS.lon],
+        ],
+        { color: '#7c3aed', weight: 2, opacity: 0.45, dashArray: '6,8' }
+      ).addTo(routes);
+
+      var p = pricing(trip.from);
+      var popup =
+        '<div style="min-width:150px;font-family:inherit">' +
+        '<strong style="color:#5b21b6">' +
+        trip.driver +
+        '</strong><br>' +
+        trip.from +
+        ' → Campus<br>' +
+        '<span style="font-size:11px">' +
+        trip.time +
+        ' · ' +
+        trip.seats +
+        ' pl.</span><br>' +
+        '<span style="font-size:11px;color:#6b7280">' +
+        p.km.toFixed(1) +
+        ' km · ' +
+        p.fc.toLocaleString() +
+        ' FC</span><br>' +
+        '<button type="button" onclick="window.selectTripOnMap(' +
+        trip.id +
+        ')" style="margin-top:6px;background:#7c3aed;color:#fff;border:none;padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer">Voir</button>' +
+        '</div>';
+
+      L.circleMarker([h.lat, h.lon], {
+        radius: 9,
+        fillColor: '#7c3aed',
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.85,
+      })
+        .bindPopup(popup)
+        .addTo(markers);
+    });
+
+    var bounds = NEIGHBORHOODS.map(function (n) {
+      return [n.lat, n.lon];
+    });
+    bounds.push([CAMPUS.lat, CAMPUS.lon]);
+    map.fitBounds(bounds, { padding: [28, 28] });
   }
 
-  tick();
-  trackingInterval = setInterval(tick, 3000);
-}
+  function selectTripOnMap(tripId) {
+    var id = Number(tripId);
+    var trip = trips().find(function (t) {
+      return Number(t.id) === id;
+    });
+    if (!trip || !map || !routes) return;
 
-function stopTracking() {
-  if (trackingInterval) {
-    clearInterval(trackingInterval);
-    trackingInterval = null;
+    var h = hoodForTrip(trip);
+    if (!h) return;
+
+    var p = pricing(trip.from);
+    var info = document.getElementById('map-trip-info');
+    if (info) info.classList.remove('hidden');
+    var el;
+    el = document.getElementById('map-trip-driver');
+    if (el) el.textContent = 'Conducteur : ' + trip.driver;
+    el = document.getElementById('map-trip-from');
+    if (el) el.textContent = trip.from + ' → Campus UPC · ' + trip.time;
+    el = document.getElementById('map-trip-eta');
+    if (el)
+      el.textContent =
+        p.fc.toLocaleString() + ' FC · ' + p.km.toFixed(1) + ' km · ' + trip.seats + ' place(s)';
+    el = document.getElementById('btn-map-track');
+    if (el) el.setAttribute('data-trip-id', String(id));
+
+    el = document.getElementById('map-price-line');
+    if (el)
+      el.innerHTML =
+        p.fc.toLocaleString() + ' <span style="font-size:0.85rem;font-weight:500">FC</span>';
+    el = document.getElementById('map-price-detail');
+    if (el) el.textContent = p.km.toFixed(1) + ' km × ' + PRICE_PER_KM + ' FC/km';
+
+    routes.clearLayers();
+    L.polyline(
+      [
+        [h.lat, h.lon],
+        [CAMPUS.lat, CAMPUS.lon],
+      ],
+      { color: '#6d28d9', weight: 4, opacity: 0.85, dashArray: '8,10' }
+    ).addTo(routes);
+    map.fitBounds(
+      [
+        [h.lat, h.lon],
+        [CAMPUS.lat, CAMPUS.lon],
+      ],
+      { padding: [48, 48] }
+    );
   }
-  if (driverMarker) {
-    map.removeLayer(driverMarker);
-    driverMarker = null;
+
+  function simulateTrack(tripId) {
+    stopTrack();
+    var id = Number(tripId);
+    var trip = trips().find(function (t) {
+      return Number(t.id) === id;
+    });
+    var h = trip ? hoodForTrip(trip) : null;
+    if (!trip || !h) return;
+
+    var t = 0;
+    function step() {
+      t += 0.04;
+      if (t > 1) t = 0;
+      var lat = h.lat + (CAMPUS.lat - h.lat) * t;
+      var lon = h.lon + (CAMPUS.lon - h.lon) * t;
+      if (driverMarker) map.removeLayer(driverMarker);
+      driverMarker = L.marker([lat, lon], { icon: divIcon('#ef4444', 16) })
+        .bindPopup('<strong>Conducteur</strong><br>' + trip.driver)
+        .addTo(map);
+      var eta = document.getElementById('map-trip-eta');
+      if (eta) eta.textContent = 'Démo · ~' + Math.ceil((1 - t) * 25) + ' min';
+      map.panTo([lat, lon]);
+    }
+    step();
+    trackTimer = setInterval(step, 2500);
   }
-}
 
-// Make selectTripOnMap available globally (called from popup onclick)
-window.selectTripOnMap = selectTripOnMap;
+  function init() {
+    if (mapInitStarted || map || typeof L === 'undefined' || !L.map) return;
+    var el = document.getElementById('map');
+    if (!el) return;
+    mapInitStarted = true;
 
-// Initialize map when section is visible (lazy load)
-var mapObserver = new IntersectionObserver(function(entries) {
-  if (entries[0].isIntersecting) {
-    initMap();
-    mapObserver.disconnect();
+    try {
+      map = L.map('map', { zoomControl: true }).setView([CAMPUS.lat, CAMPUS.lon], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+        maxZoom: 19,
+      }).addTo(map);
+
+      routes = L.layerGroup().addTo(map);
+      markers = L.layerGroup().addTo(map);
+
+      showAllTrips();
+    } catch (e) {
+      console.error('Carte UPC:', e);
+      map = null;
+      mapInitStarted = false;
+      return;
+    }
+
+    function invalidate() {
+      if (map) map.invalidateSize();
+    }
+    [0, 200, 600].forEach(function (ms) {
+      setTimeout(invalidate, ms);
+    });
+    window.addEventListener('load', invalidate);
+
+    var b1 = document.getElementById('btn-map-all');
+    var b2 = document.getElementById('btn-map-campus');
+    var b3 = document.getElementById('btn-map-track');
+    if (b1) b1.addEventListener('click', showAllTrips);
+    if (b2)
+      b2.addEventListener('click', function () {
+        if (map) map.flyTo([CAMPUS.lat, CAMPUS.lon], 15);
+      });
+    if (b3)
+      b3.addEventListener('click', function () {
+        var tid = this.getAttribute('data-trip-id');
+        if (tid) simulateTrack(parseInt(tid, 10));
+      });
   }
-}, { threshold: 0.1 });
 
-var mapSection = document.getElementById('map-section');
-if (mapSection) mapObserver.observe(mapSection);
+  window.selectTripOnMap = selectTripOnMap;
+  window.refreshMapTrips = showAllTrips;
+
+  function boot() {
+    init();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+  window.addEventListener('load', boot);
+})();
